@@ -1,0 +1,43 @@
+const fs = require('fs');
+const path = require('path');
+
+// Путь к директории (текущая директория)
+const directory = __dirname;
+
+// Регулярное выражение для поиска файлов с числами в скобках в любом месте имени
+const regex = /\(\d{1,2}\)/; // Ищет числа от 1 до 99 в любых местах имени файла
+
+function removeFilesWithNumbersInParentheses(directory) {
+    fs.readdir(directory, (err, files) => {
+        if (err) {
+            console.error('Ошибка при чтении директории:', err);
+            return;
+        }
+
+        // Фильтруем файлы, которые соответствуют регулярному выражению
+        const matchingFiles = files.filter(file => regex.test(file));
+
+        console.log('Файлы для удаления:');
+        if (matchingFiles.length > 0) {
+            matchingFiles.forEach(file => {
+                const filePath = path.join(directory, file);
+                console.log(`Попытка удалить файл: ${filePath}`); // Сообщение перед удалением
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Ошибка при удалении файла:', err);
+                    } else {
+                        console.log(`Файл успешно удален: ${filePath}`);
+                    }
+                });
+            });
+        } else {
+            console.log('Дубликаты не найдены.');
+        }
+    });
+}
+
+// Вызов функции
+removeFilesWithNumbersInParentheses(directory);
+
+// Ваше сообщение
+console.log('work');

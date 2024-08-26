@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Duplicates</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        #dropArea {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            font-size: 16px;
+            color: #555;
+            cursor: pointer;
+        }
+        #dropArea.dragover {
+            border-color: #000;
+            background-color: #f0f0f0;
+        }
+        #status {
+            margin-top: 20px;
+        }
+        #loading {
+            display: none;
+            font-size: 18px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Remove Duplicates</h1>
+    <div id="dropArea">Drag & Drop files here or click to select files</div>
+    <p id="status"></p>
+    <p id="loading">Архив готовится, подождите...</p>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const status = document.getElementById('status');
+        const loading = document.getElementById('loading');
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('dragover');
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        dropArea.addEventListener('click', () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.multiple = true;
+            fileInput.addEventListener('change', () => {
+                handleFiles(fileInput.files);
+            });
+            fileInput.click();
+        });
+
+        function handleFiles(files) {
+            const fileArray = Array.from(files);
+            const uniqueFiles = new Map();
+
+            fileArray.forEach(file => {
+                const baseName = file.name.replace(/\(\d{1,3}\)/g, '').trim();
+
+                // Проверяем, есть ли в имени файла номер в скобках
+                const isDuplicate = /\(\d{1,3}\)/.test(file.name);
+
+                if (!isDuplicate) {
+                    uniqueFiles.set(baseName, file);
+                } else {
+                    console.log(`Удаляю дубликат: ${file.name}`);
+                }
+            });
+
+            if (uniqueFiles.size === 0) {
+                status.textContent = 'Все файлы были дубликатами и удалены.';
+            } else {
+                loading.style.display = 'block';  // Показываем индикатор загрузки
+                createArchive(uniqueFiles).then(() => {
+                    loading.style.display = 'none';  // Скрываем индикатор загрузки
+                    status.textContent = 'Архив без дубликатов готов для скачивания.';
+                });
+            }
+        }
+
+        function createArchive(filesMap) {
+            const zip = new JSZip();
+
+            filesMap.forEach((file, fileName) => {
+                zip.file(file.name, file);
+            });
+
+            return zip.generateAsync({ type: 'blob' }).then((content) => {
+                return new Promise((resolve) => {
+                    const a = document.createElement('a');
+                    const url = URL.createObjectURL(content);
+                    
+                    a.href = url;
+                    a.download = 'unique_files.zip';
+                    a.click();
+
+                    // Очищаем URL после скачивания
+                    URL.revokeObjectURL(url);
+
+                    // Увеличиваем таймаут, чтобы дать время для завершения скачивания
+                    setTimeout(resolve, 2000);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
